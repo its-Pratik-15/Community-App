@@ -12,13 +12,8 @@ import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 
 
-// Axios base URL from env (Vercel uses VITE_ vars)
-function setAxiosBaseURL() {
-  const v = import.meta?.env?.VITE_API_BASE_URL
-  if (!v) return
-  axios.defaults.baseURL = v
-}
-setAxiosBaseURL()
+// Axios base URL: hardcode to Render backend for production
+axios.defaults.baseURL = 'https://community-app-kuzg.onrender.com'
 
 const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
 if (token) {
