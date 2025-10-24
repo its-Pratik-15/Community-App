@@ -24,4 +24,4 @@ backend/dist/
 .DS_Store
 
 # Prisma
-backend/prisma/migrations/
+# (Track migrations in Git so deploys can run `prisma migrate deploy`)
