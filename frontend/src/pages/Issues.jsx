@@ -105,6 +105,9 @@ export default function Issues() {
     )
   }
 
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Issues</Typography>
@@ -114,7 +117,12 @@ export default function Issues() {
         <Button type="submit" variant="contained">Submit</Button>
       </Box>
       <Box sx={{ display: 'grid', gap: 1 }}>
-        {items.map(i => {
+        {safeItems.length === 0 ? (
+          <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+            {error ? 'Error loading issues' : 'No issues found'}
+          </Typography>
+        ) : (
+          safeItems.map(i => {
           const canTakeStaff = me?.role === 'STAFF' && i.status === 'OPEN'
           const isSecretary = me?.role === 'SECRETARY'
           const canResolve = isSecretary || (me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId)
@@ -139,8 +147,8 @@ export default function Issues() {
                 )}
               </Box>
             </Paper>
-          )
-        })}
+          )})
+        )}
       </Box>
     </Container>
   )

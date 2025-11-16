@@ -133,6 +133,9 @@ export default function Notices() {
     }
   };
 
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>
@@ -179,7 +182,12 @@ export default function Notices() {
       )}
 
       <Stack spacing={2} sx={{ mt: 4 }}>
-        {items.map((item) => (
+        {safeItems.length === 0 ? (
+          <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+            {error ? 'Error loading notices' : 'No notices found'}
+          </Typography>
+        ) : (
+          safeItems.map((item) => (
           <Card key={item.id} variant="outlined">
             <CardContent>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
@@ -203,11 +211,12 @@ export default function Notices() {
               </Box>
               <Divider sx={{ my: 2 }} />
               <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {item.content}
+                {item?.content}
               </Typography>
             </CardContent>
           </Card>
-        ))}
+          )))
+        }
       </Stack>
     </Container>
   );

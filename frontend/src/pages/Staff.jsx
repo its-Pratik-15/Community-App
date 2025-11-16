@@ -58,6 +58,9 @@ export default function Staff() {
     );
   }
 
+  // Ensure staff is always an array
+  const safeStaff = Array.isArray(staff) ? staff : [];
+
   const toggleDuty = async (member) => {
     setError('');
     try {
@@ -76,22 +79,51 @@ export default function Staff() {
       <Typography variant="h5" fontWeight={600} gutterBottom>Staff</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Box sx={{ display: 'grid', gap: 1 }}>
-        {staff.map(s => (
-          <Paper key={s.id} elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Box>
-              <Typography variant="subtitle1" fontWeight={600}>{s.name}</Typography>
-              <Typography variant="body2" color="text.secondary">{s.role}</Typography>
-            </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Chip label={s.isOnDuty ? 'On duty' : 'Off duty'} color={s.isOnDuty ? 'success' : 'default'} size="small" />
-              {me?.role === 'SECRETARY' && (
-                <Button variant="outlined" size="small" onClick={() => toggleDuty(s)}>
-                  {s.isOnDuty ? 'Mark off duty' : 'Mark on duty'}
-                </Button>
-              )}
-            </Box>
-          </Paper>
-        ))}
+        {safeStaff.length === 0 ? (
+          <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+            {error ? 'Error loading staff' : 'No staff members found'}
+          </Typography>
+        ) : (
+          safeStaff.map(s => (
+            <Paper 
+              key={s.id} 
+              elevation={0} 
+              sx={{ 
+                p: 2, 
+                border: '1px solid', 
+                borderColor: 'divider', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between' 
+              }}
+            >
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {s.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {s.role}
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Chip 
+                  label={s.isOnDuty ? 'On duty' : 'Off duty'} 
+                  color={s.isOnDuty ? 'success' : 'default'} 
+                  size="small" 
+                />
+                {me?.role === 'SECRETARY' && (
+                  <Button 
+                    variant="outlined" 
+                    size="small" 
+                    onClick={() => toggleDuty(s)}
+                  >
+                    {s.isOnDuty ? 'Mark off duty' : 'Mark on duty'}
+                  </Button>
+                )}
+              </Box>
+            </Paper>
+          ))
+        )}
       </Box>
     </Container>
   )
