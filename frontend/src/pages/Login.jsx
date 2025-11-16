@@ -23,37 +23,33 @@ export default function Login() {
     showLoading();
     
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({ email, password }),
-        credentials: 'include' // Important for cookies
-      });
+      // Use axios instead of fetch for consistent behavior with interceptors
+      const response = await axios.post('/api/auth/login', 
+        { email, password },
+        {
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        }
+      );
       
-      const data = await response.json();
+      const { data } = response;
       
-      if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
-      }
-      
-      // Store user data and token in localStorage
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
-      // Store token if provided in response
       if (data.token) {
         localStorage.setItem('token', data.token);
-        // Set default authorization header for axios
+        // This will be handled by the interceptor, but we set it here too for immediate use
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
-      // Show success message and redirect
       toast.success('Login successful!');
-      window.location.href = '/'; // Full page reload to ensure auth state is properly set
+      // Use navigate for SPA navigation instead of full page reload
+      navigate('/');
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error.message || 'Login failed. Please try again.';

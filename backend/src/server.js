@@ -14,11 +14,31 @@ dotenv.config();
 const app = express();
 
 // CORS Configuration - Allow all origins
-console.log('CORS: Allowing all origins');
+console.log('CORS: Configuring with credentials support');
 
 const corsOptions = {
-  origin: true, // Allow all origins
-  credentials: true,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, you might want to restrict origins
+    const allowedOrigins = [
+      'http://localhost:5173',
+      'https://your-production-domain.com'
+    ];
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
@@ -32,11 +52,12 @@ const corsOptions = {
   exposedHeaders: [
     'Set-Cookie',
     'Content-Range',
-    'X-Total-Count'
+    'X-Total-Count',
+    'Access-Control-Allow-Credentials'
   ],
   maxAge: 86400, // 24 hours
   preflightContinue: false,
-  optionsSuccessStatus: 204
+  optionsSuccessStatus: 200
 };
 
 // Apply CORS middleware
