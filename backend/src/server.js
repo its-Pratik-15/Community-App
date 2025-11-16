@@ -16,10 +16,7 @@ const app = express();
 // CORS Configuration
 const allowedOrigins = [
   'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'https://community-app-gamma.vercel.app',
-  'https://community-app-kuzg.onrender.com',
-  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(url => url.trim()).filter(Boolean) : [])
+  'https://community-app-gamma.vercel.app'
 ];
 
 // Log allowed origins for debugging
