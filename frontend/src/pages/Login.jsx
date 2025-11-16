@@ -25,19 +25,31 @@ export default function Login() {
     try {
       // Use the axios instance from main.jsx
       const response = await axios.post('/api/auth/login', 
-        { email, password }
+        { email, password },
+        { withCredentials: true } // Ensure cookies are sent and received
       );
       
       const { data } = response;
       
+      // Store user data in localStorage
       if (data.user) {
         localStorage.setItem('user', JSON.stringify(data.user));
       }
       
+      // Store token in both localStorage and axios defaults
       if (data.token) {
         localStorage.setItem('token', data.token);
-        // This will be handled by the interceptor, but we set it here too for immediate use
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
+      } else {
+        // If no token in response, try to get it from cookies
+        const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+          const [name, value] = cookie.trim().split('=');
+          return { ...cookies, [name]: value };
+        }, {});
+        
+        if (cookies.token) {
+          axios.defaults.headers.common['Authorization'] = `Bearer ${cookies.token}`;
+        }
       }
       
       toast.success('Login successful!');

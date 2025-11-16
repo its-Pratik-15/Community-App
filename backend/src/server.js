@@ -13,15 +13,21 @@ import profileRoutes from './routes/profile/profile.routes.js';
 dotenv.config();
 const app = express();
 
-// CORS Configuration - Allow all origins
-console.log('CORS: Configuring to allow all origins');
+// CORS Configuration
+console.log('CORS: Configuring CORS with credentials support');
 
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow all origins
+    // Allow all origins in development
+    if (process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+    
+    // In production, you might want to restrict this to specific domains
+    // For now, we'll allow all origins but you should update this for production
     return callback(null, true);
   },
-  credentials: true,
+  credentials: true, // This is important for cookies
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Content-Type',

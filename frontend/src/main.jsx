@@ -29,11 +29,35 @@ const axiosInstance = axios.create({
 // Add request interceptor to include token in headers
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Get token from localStorage
-    const token = localStorage.getItem('token');
+    // Skip for login/register requests to prevent infinite loops
+    if (config.url.includes('/auth/')) {
+      return config;
+    }
+    
+    // Try to get token from localStorage first
+    let token = localStorage.getItem('token');
+    
+    // If no token in localStorage, try to get it from cookies
+    if (!token && typeof document !== 'undefined') {
+      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
+        const [name, value] = cookie.trim().split('=');
+        return { ...cookies, [name]: value };
+      }, {});
+      
+      if (cookies.token) {
+        token = cookies.token;
+        // Store it in localStorage for future use
+        localStorage.setItem('token', token);
+      }
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Ensure credentials are sent with every request
+    config.withCredentials = true;
+    
     return config;
   },
   (error) => {
