@@ -13,16 +13,48 @@ import profileRoutes from './routes/profile/profile.routes.js';
 dotenv.config();
 const app = express();
 
-// Middleware
+// CORS Configuration
+const allowedOrigins = process.env.NODE_ENV === 'production'
+  ? (process.env.FRONTEND_URL || '').split(',').map(url => url.trim()).filter(Boolean)
+  : ['http://localhost:5173', 'http://127.0.0.1:5173'];
+
 const corsOptions = {
-  origin: process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',') : 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      console.warn(`CORS blocked: ${origin}`);
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  exposedHeaders: ['Set-Cookie']
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'Access-Control-Allow-Credentials'
+  ],
+  exposedHeaders: [
+    'Set-Cookie',
+    'Content-Range',
+    'X-Total-Count'
+  ],
+  maxAge: 86400, // 24 hours
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
+// Apply CORS middleware
 app.use(cors(corsOptions));
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
