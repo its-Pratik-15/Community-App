@@ -1,15 +1,60 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Container, Paper, Typography, Box, Chip } from '@mui/material'
+import { Container, Paper, Typography, Box, Chip, CircularProgress } from '@mui/material'
+import { useLoading } from '../contexts/LoadingContext'
 
 export default function Maintenance() {
-  const [items, setItems] = useState([])
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const { showLoading, hideLoading } = useLoading();
+
   useEffect(() => {
-    axios.get('/api/maintenance').then(r => setItems(r.data)).catch(() => setItems([]))
-  }, [])
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        showLoading();
+        
+        const response = await axios.get('/api/maintenance');
+        
+        if (isMounted) {
+          setItems(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching maintenance data:', err);
+        if (isMounted) {
+          setItems([]);
+          setError('Failed to load maintenance data');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+        hideLoading();
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+      hideLoading();
+    };
+  }, [showLoading, hideLoading]);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Maintenance</Typography>
+      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <Box sx={{ display: 'grid', gap: 1 }}>
         {items.map((m) => {
           const displayName = m.user?.name || m.user?.email || `User #${m.userId}`

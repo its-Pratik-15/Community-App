@@ -1,24 +1,74 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Container, Paper, Typography, Box, Button, Chip, Alert } from '@mui/material'
+import { Container, Paper, Typography, Box, Button, Chip, Alert, CircularProgress } from '@mui/material'
+import { useLoading } from '../contexts/LoadingContext'
 
 export default function Staff() {
-  const [staff, setStaff] = useState([])
-  const [me, setMe] = useState(null)
-  const [error, setError] = useState('')
+  const [staff, setStaff] = useState([]);
+  const [me, setMe] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const { showLoading, hideLoading } = useLoading();
+
   useEffect(() => {
-    axios.get('/api/staff').then(r => setStaff(r.data)).catch(() => setStaff([]))
-    axios.get('/api/me').then(r => setMe(r.data)).catch(() => setMe(null))
-  }, [])
+    let isMounted = true;
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        showLoading();
+        
+        const [staffResponse, profileResponse] = await Promise.all([
+          axios.get('/api/staff'),
+          axios.get('/api/profile/me')
+        ]);
+
+        if (isMounted) {
+          setStaff(staffResponse.data);
+          setMe(profileResponse.data);
+        }
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        if (isMounted) {
+          setStaff([]);
+          setMe(null);
+          setError('Failed to load staff data');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+        hideLoading();
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      isMounted = false;
+      hideLoading();
+    };
+  }, [showLoading, hideLoading]);
+
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   const toggleDuty = async (member) => {
-    setError('')
+    setError('');
     try {
-      const r = await axios.patch(`/api/staff/${member.id}`, { isOnDuty: !member.isOnDuty })
-      setStaff(prev => prev.map(s => s.id === member.id ? r.data : s))
+      showLoading();
+      const r = await axios.patch(`/api/staff/${member.id}`, { isOnDuty: !member.isOnDuty });
+      setStaff(prev => prev.map(s => s.id === member.id ? r.data : s));
     } catch (e) {
-      const msg = e?.response?.data?.error || 'Failed to update duty status'
-      setError(msg)
+      const msg = e?.response?.data?.error || 'Failed to update duty status';
+      setError(msg);
+    } finally {
+      hideLoading();
     }
   }
   return (

@@ -10,29 +10,41 @@ export default function Profile() {
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    axios.get('/api/me')
-      .then(r => { setData(r.data); setName(r.data?.name || '') })
-      .catch(() => setErr('Failed to load profile'))
-  }, [])
+    axios.get('/api/profile/me', { withCredentials: true })
+      .then(r => { 
+        if (r.data) {
+          setData(r.data); 
+          setName(r.data.name || '');
+          setMsg('');
+        } else {
+          setErr('Failed to load profile');
+        }
+      })
+      .catch(() => setErr('Failed to load profile'));
+  }, []);
 
   const save = async () => {
     try {
-      setSaving(true)
+      setSaving(true);
       if (!String(name).trim()) {
-        setErr('Name must not be empty')
-        setMsg('')
-        return
+        setErr('Name must not be empty');
+        setMsg('');
+        return;
       }
-      const r = await axios.patch('/api/me', { name })
-      setData(r.data)
-      setMsg('Saved')
-      setErr('')
+      const r = await axios.patch('/api/profile', { name }, { withCredentials: true });
+      if (r.data) {
+        setData(r.data);
+        setMsg('Saved');
+        setErr('');
+      } else {
+        throw new Error('Save failed');
+      }
     } catch (e) {
-      const msg = e?.response?.data?.error || 'Save failed'
-      setErr(msg)
-      setMsg('')
+      const msg = e?.response?.data?.error || 'Save failed';
+      setErr(msg);
+      setMsg('');
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 

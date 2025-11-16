@@ -1,16 +1,54 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert } from '@mui/material'
+import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert, CircularProgress } from '@mui/material'
+import { useLoading } from '../contexts/LoadingContext'
 
 export default function Issues() {
   const [items, setItems] = useState([])
   const [text, setText] = useState('')
   const [me, setMe] = useState(null)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
+  const { showLoading, hideLoading } = useLoading()
   useEffect(() => {
-    axios.get('/api/issues').then(r => setItems(r.data)).catch(() => setItems([]))
-    axios.get('/api/me').then(r => setMe(r.data)).catch(() => setMe(null))
-  }, [])
+    let isMounted = true;
+    
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        showLoading();
+        
+        const [issuesResponse, profileResponse] = await Promise.all([
+          axios.get('/api/issues'),
+          axios.get('/api/profile/me')
+        ]);
+        
+        if (isMounted) {
+          setItems(issuesResponse.data);
+          setMe(profileResponse.data);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        if (isMounted) {
+          setItems([]);
+          setMe(null);
+          setError('Failed to load data');
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+        hideLoading();
+      }
+    };
+    
+    fetchData();
+    
+    return () => {
+      isMounted = false;
+      hideLoading();
+    };
+  }, [showLoading, hideLoading]);
   const submit = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
@@ -59,6 +97,14 @@ export default function Issues() {
       setError(msg)
     }
   }
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    )
+  }
+
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Issues</Typography>
@@ -82,7 +128,7 @@ export default function Issues() {
                 {canTakeStaff && (
                   <Button size="small" variant="outlined" onClick={() => takeIssue(i)}>Take</Button>
                 )}
-                {(isSecretary && i.status !== 'RESOLVED') || (me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId) ? (
+                {me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId ? (
                   <Button size="small" variant="contained" onClick={() => resolveIssue(i)}>Resolve</Button>
                 ) : null}
                 {isSecretary && i.status === 'RESOLVED' && (
