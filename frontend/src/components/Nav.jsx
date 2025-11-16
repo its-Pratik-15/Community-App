@@ -42,16 +42,35 @@ export default function Nav() {
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout', {}, { withCredentials: true });
+      // Use GET instead of POST for logout
+      await axios.get('/api/auth/logout', { withCredentials: true });
       // Show success toast before navigation
       toast.success('Successfully logged out');
-    } catch (error) {
-      console.error('Logout error:', error);
-      toast.error('Failed to log out. Please try again.');
-    } finally {
+      
+      // Clear local state
       setMe(null);
       setHasToken(false);
+      
+      // Clear any stored tokens
+      localStorage.removeItem('token');
+      
       // Small delay to allow toast to be seen before navigation
+      setTimeout(() => {
+        navigate('/login');
+      }, 500);
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Even if the server fails, we should still clear the local state
+      setMe(null);
+      setHasToken(false);
+      localStorage.removeItem('token');
+      
+      // Don't show error to user if we're already logged out
+      if (!error.response || error.response.status !== 401) {
+        toast.error('Failed to log out. Please try again.');
+      }
+      
+      // Still navigate to login page
       setTimeout(() => {
         navigate('/login');
       }, 500);
