@@ -13,33 +13,12 @@ import profileRoutes from './routes/profile/profile.routes.js';
 dotenv.config();
 const app = express();
 
-// CORS Configuration
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'https://community-app-gamma.vercel.app',
-  'https://community-app-kuzg.onrender.com',
-  ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(url => url.trim()).filter(Boolean) : [])
-];
-
-// Log allowed origins for debugging
-console.log('Allowed CORS origins:', allowedOrigins);
+// CORS Configuration - Allow all origins
+console.log('CORS: Allowing all origins');
 
 const corsOptions = {
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.some(allowedOrigin => 
-      origin === allowedOrigin || 
-      origin.endsWith(allowedOrigin.replace(/^https?:\/\//, ''))
-    )) {
-      return callback(null, true);
-    }
-    
-    console.warn(`CORS blocked: ${origin}. Allowed origins:`, allowedOrigins);
-    return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
-  },
+  origin: true, // Allow all origins
+  credentials: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
