@@ -12,8 +12,8 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
-// Configure axios defaults
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://community-app-kuzg.onrender.com';
+// Configure axios defaults - using relative paths since we're proxying through Vercel
+const API_BASE_URL = ''; // Empty for relative paths
 
 // Configure axios instance with default settings
 const axiosInstance = axios.create({
