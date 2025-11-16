@@ -40,7 +40,9 @@ export default function Login() {
       }
       
       // Store user data and token in localStorage
-      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
       
       // Store token if provided in response
       if (data.token) {
@@ -49,7 +51,8 @@ export default function Login() {
         axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
       }
       
-      toast.success('Login successful');
+      // Show success message and redirect
+      toast.success('Login successful!');
       window.location.href = '/'; // Full page reload to ensure auth state is properly set
     } catch (error) {
       console.error('Login error:', error);
@@ -124,4 +127,5 @@ export default function Login() {
       </Paper>
     </Container>
   );
+}
 }
