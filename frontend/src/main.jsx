@@ -76,69 +76,31 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
+    // Handle 401 Unauthorized errors
     if (error.response?.status === 401) {
-      // Handle unauthorized access
+      // Clear any existing auth data
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      // Redirect to login if not already there
+      delete axiosInstance.defaults.headers.common['Authorization'];
+      
+      // Only redirect if not already on the login page
       if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+        // Store the original URL to redirect back after login
+        const returnUrl = `?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        window.location.href = `/login${returnUrl}`;
       }
+      
+      // Return a promise that never resolves to stop the current request chain
+      return new Promise(() => {});
     }
+    
+    // For other errors, reject with the error
     return Promise.reject(error);
   }
 );
 
 // Set axios instance as default
 export default axiosInstance;
-
-// Add response interceptor to handle 401 errors
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      // Redirect to login if not already there
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
-
-// Add a request interceptor to include the token in every request
-axios.interceptors.request.use(
-  (config) => {
-    // Get the token from localStorage
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add a response interceptor to handle 401 errors
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Handle unauthorized access
-      localStorage.removeItem('token');
-      // Optionally redirect to login
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-    }
-    return Promise.reject(error);
-  }
-);
 
 function Root() {
   const getInitialMode = () => {

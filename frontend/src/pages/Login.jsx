@@ -53,8 +53,13 @@ export default function Login() {
       }
       
       toast.success('Login successful!');
-      // Use navigate for SPA navigation instead of full page reload
-      navigate('/');
+      
+      // Check for return URL in query params
+      const params = new URLSearchParams(window.location.search);
+      const returnUrl = params.get('returnUrl');
+      
+      // Navigate to the return URL or home page
+      navigate(returnUrl || '/', { replace: true });
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = error.message || 'Login failed. Please try again.';
