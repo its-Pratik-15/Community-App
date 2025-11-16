@@ -67,7 +67,14 @@ axiosInstance.interceptors.request.use(
 
 // Add response interceptor to handle errors
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    // If we get a new token in the response, update it
+    if (response.data?.token) {
+      localStorage.setItem('token', response.data.token);
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
+    }
+    return response;
+  },
   (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access

@@ -26,14 +26,23 @@ class AuthController {
         role: user.role,
       });
 
-      // Set HTTP-only cookie
-      res.cookie('token', token, {
+      // Set HTTP-only cookie with proper configuration
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieOptions = {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction,
+        sameSite: isProduction ? 'none' : 'lax', // Use 'none' in production for cross-site
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
         path: '/',
+        domain: isProduction ? '.vercel.app' : undefined
+      };
+      
+      console.log('Setting cookie with options:', {
+        ...cookieOptions,
+        token: token ? 'token-present' : 'no-token'
       });
+      
+      res.cookie('token', token, cookieOptions);
 
       res.json({
         user: {

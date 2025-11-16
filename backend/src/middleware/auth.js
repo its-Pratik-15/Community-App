@@ -7,6 +7,12 @@ export function signToken(payload) {
 }
 
 export function requireAuth(req, res, next) {
+  console.log('=== AUTH MIDDLEWARE ===');
+  console.log('Request URL:', req.originalUrl);
+  console.log('Request method:', req.method);
+  console.log('Request headers:', req.headers);
+  console.log('Cookies:', req.cookies);
+  
   // 1. Check for token in Authorization header
   const authHeader = req.headers.authorization;
   const tokenFromHeader = authHeader && authHeader.startsWith('Bearer ') 
@@ -22,6 +28,12 @@ export function requireAuth(req, res, next) {
     ?.split('; ')
     ?.find(c => c.trim().startsWith('token='))
     ?.split('=')[1];
+  
+  console.log('Token sources:', {
+    fromHeader: !!tokenFromHeader,
+    fromCookie: !!tokenFromCookie,
+    fromRawCookie: !!tokenFromRawCookie
+  });
   
   // 4. Use the first available token
   const finalToken = tokenFromHeader || tokenFromCookie || tokenFromRawCookie;
