@@ -23,16 +23,9 @@ export default function Login() {
     showLoading();
     
     try {
-      // Use axios instead of fetch for consistent behavior with interceptors
+      // Use the axios instance from main.jsx
       const response = await axios.post('/api/auth/login', 
-        { email, password },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          }
-        }
+        { email, password }
       );
       
       const { data } = response;

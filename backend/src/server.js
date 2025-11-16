@@ -13,8 +13,15 @@ import profileRoutes from './routes/profile/profile.routes.js';
 dotenv.config();
 const app = express();
 
-// CORS Configuration - Allow all origins
+// CORS Configuration
 console.log('CORS: Configuring with credentials support');
+
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://community-a8kebl7sn-pratik-15s-projects.vercel.app',
+  'https://community-app-gamma.vercel.app',
+  'https://community-app-kuzg.onrender.com'
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -26,18 +33,18 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // In production, you might want to restrict origins
-    const allowedOrigins = [
-      'http://localhost:5173',
-      'https://your-production-domain.com'
-    ];
-    
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
+    // Check if the origin is in the allowed list
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
     
-    return callback(null, true);
+    // For Vercel preview deployments, allow any subdomain of vercel.app
+    if (origin.endsWith('.vercel.app')) {
+      return callback(null, true);
+    }
+    
+    console.log('CORS: Blocked origin:', origin);
+    return callback(new Error('Not allowed by CORS'), false);
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -47,17 +54,18 @@ const corsOptions = {
     'X-Requested-With',
     'Accept',
     'Origin',
-    'Access-Control-Allow-Credentials'
+    'Access-Control-Allow-Credentials',
+    'X-Requested-With'
   ],
   exposedHeaders: [
-    'Set-Cookie',
     'Content-Range',
     'X-Total-Count',
-    'Access-Control-Allow-Credentials'
+    'Access-Control-Allow-Credentials',
+    'Set-Cookie'
   ],
   maxAge: 86400, // 24 hours
   preflightContinue: false,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 204
 };
 
 // Apply CORS middleware

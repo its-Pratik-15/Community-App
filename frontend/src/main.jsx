@@ -12,12 +12,22 @@ import "@fontsource/roboto/400.css";
 import "@fontsource/roboto/500.css";
 import "@fontsource/roboto/700.css";
 
-// Configure axios to send cookies with every request
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+// Configure axios defaults
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://community-app-kuzg.onrender.com';
+
+// Configure axios instance with default settings
+const axiosInstance = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json',
+  },
+  timeout: 10000, // 10 seconds
+});
 
 // Add request interceptor to include token in headers
-axios.interceptors.request.use(
+axiosInstance.interceptors.request.use(
   (config) => {
     // Get token from localStorage
     const token = localStorage.getItem('token');
@@ -30,6 +40,26 @@ axios.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Add response interceptor to handle errors
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      // Redirect to login if not already there
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Set axios instance as default
+export default axiosInstance;
 
 // Add response interceptor to handle 401 errors
 axios.interceptors.response.use(
