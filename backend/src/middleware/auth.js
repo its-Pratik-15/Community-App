@@ -7,23 +7,68 @@ export function signToken(payload) {
 }
 
 export function requireAuth(req, res, next) {
-  const header = req.headers.authorization || "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
-  if (!token) return res.status(401).json({ error: "Unauthorized" });
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  
+  // Check for token in cookies if not in header
+  const tokenFromCookie = req.cookies?.token || 
+                        (req.signedCookies ? req.signedCookies.token : null);
+  
+  const finalToken = token || tokenFromCookie || 
+                   (req.headers.cookie && req.headers.cookie.split('; ')
+                    .find(c => c.startsWith('token='))?.split('=')[1]);
+  
+  if (!finalToken) {
+    return res.status(401).json({ error: "Unauthorized: No token provided" });
+  }
+  
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "changeme");
+    const decoded = jwt.verify(finalToken, process.env.JWT_SECRET || "changeme");
+    
+    if (!decoded.role) {
+      return res.status(401).json({ error: "Invalid token: Missing role information" });
+    }
+    
+    // Attach user info to request object
     req.user = decoded;
     next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
+  } catch (error) {    
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: "Session expired. Please log in again." });
+    }
+    
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
 
 export function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ error: "Forbidden" });
+    if (!req.user) {
+      return res.status(403).json({ error: "Forbidden: No user information found" });
     }
+
+    // Flatten the roles array in case it's nested
+    const flattenedRoles = roles.flat(Infinity);
+    
+    // Convert both stored role and required roles to uppercase for case-insensitive comparison
+    const userRole = req.user.role?.toUpperCase();
+    const requiredRoles = flattenedRoles.map(role => {
+      if (typeof role === 'string') {
+        return role.toUpperCase();
+      }
+      console.warn('Invalid role type:', role);
+      return ''; // Will never match
+    });
+    
+    if (!requiredRoles.includes(userRole)) {
+      console.log(`Access denied. User role: ${userRole}, Required roles: ${requiredRoles.join(', ')}`);
+      return res.status(403).json({ 
+        error: "Forbidden: Insufficient permissions",
+        requiredRoles,
+        currentRole: userRole
+      });
+    }
+    
     next();
   };
 }

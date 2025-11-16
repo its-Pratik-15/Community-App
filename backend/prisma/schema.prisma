@@ -15,18 +15,19 @@ enum Role {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  photo     String?
-  passwordHash String?
-  block     String?
-  flatNo    String?
-  role      Role     @default(TENANT)
-  createdAt DateTime @default(now())
-  issues    Issue[]
-  maintenance Maintenance[]
-  staff     Staff?
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  name          String?
+  photo         String?
+  passwordHash  String?
+  block         String?
+  flatNo        String?
+  role          Role         @default(TENANT)
+  createdAt     DateTime     @default(now())
+  issues        Issue[]
+  maintenance   Maintenance[]
+  notices       Notice[]
+  staff         Staff?
 }
 
 model Notice {
@@ -34,27 +35,35 @@ model Notice {
   title     String
   content   String
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
 }
 
 model Issue {
   id          Int      @id @default(autoincrement())
   description String
   status      String   @default("OPEN")
+  resolution  String?
   createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
   user        User?    @relation(fields: [userId], references: [id])
   userId      Int?
   assignedTo  Staff?   @relation("AssignedIssues", fields: [assignedStaffId], references: [id])
   assignedStaffId Int?
+  resolvedBy  Staff?   @relation("ResolvedIssues", fields: [resolvedById], references: [id])
+  resolvedById Int?
 }
 
 model Staff {
-  id        Int      @id @default(autoincrement())
-  name      String
-  role      String
-  isOnDuty  Boolean  @default(false)
-  user      User?    @relation(fields: [userId], references: [id])
-  userId    Int?     @unique
-  issues    Issue[]  @relation("AssignedIssues")
+  id             Int       @id @default(autoincrement())
+  name           String
+  role           Role      @default(STAFF)
+  isOnDuty       Boolean   @default(false)
+  user           User?     @relation(fields: [userId], references: [id])
+  userId         Int?      @unique
+  issues         Issue[]   @relation("AssignedIssues")
+  resolvedIssues Issue[]   @relation("ResolvedIssues")
+  createdAt      DateTime  @default(now())
 }
 
 model Maintenance {
