@@ -9,7 +9,9 @@ export function signToken(payload) {
 export function requireAuth(req, res, next) {
   // 1. Check for token in Authorization header
   const authHeader = req.headers.authorization;
-  const tokenFromHeader = authHeader && authHeader.split(' ')[1];
+  const tokenFromHeader = authHeader && authHeader.startsWith('Bearer ') 
+    ? authHeader.split(' ')[1] 
+    : null;
   
   // 2. Check for token in cookies
   const tokenFromCookie = req.cookies?.token || 
@@ -26,6 +28,7 @@ export function requireAuth(req, res, next) {
   
   if (!finalToken) {
     console.log('No token found in request');
+    console.log('Headers:', req.headers);
     return res.status(401).json({ 
       error: "Unauthorized: No token provided",
       details: {

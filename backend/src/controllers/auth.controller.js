@@ -42,6 +42,7 @@ class AuthController {
           email: user.email,
           role: user.role,
         },
+        token // Include token in response for clients that need it
       });
     } catch (error) {
       console.error('Login error:', error);
