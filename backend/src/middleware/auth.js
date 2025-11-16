@@ -7,15 +7,22 @@ export function signToken(payload) {
 }
 
 export function requireAuth(req, res, next) {
-  console.log('=== AUTH MIDDLEWARE ===');
-  console.log('Request URL:', req.originalUrl);
-  console.log('Request method:', req.method);
-  console.log('Request headers:', req.headers);
-  console.log('Cookies:', req.cookies);
-  
+  // Log request details for debugging
+  console.log('Auth Middleware - Request:', {
+    method: req.method,
+    path: req.path,
+    headers: {
+      authorization: req.headers.authorization ? 'present' : 'missing',
+      cookie: req.headers.cookie ? 'present' : 'missing',
+      origin: req.headers.origin
+    },
+    cookies: req.cookies,
+    signedCookies: req.signedCookies
+  });
+
   // 1. Check for token in Authorization header
   const authHeader = req.headers.authorization;
-  const tokenFromHeader = authHeader && authHeader.startsWith('Bearer ') 
+  const tokenFromHeader = authHeader?.startsWith('Bearer ') 
     ? authHeader.split(' ')[1] 
     : null;
   
@@ -30,14 +37,14 @@ export function requireAuth(req, res, next) {
     ?.split('=')[1];
   
   console.log('Token sources:', {
-    fromHeader: !!tokenFromHeader,
-    fromCookie: !!tokenFromCookie,
-    fromRawCookie: !!tokenFromRawCookie
+    header: tokenFromHeader ? 'present' : 'missing',
+    cookie: tokenFromCookie ? 'present' : 'missing',
+    rawCookie: tokenFromRawCookie ? 'present' : 'missing'
   });
   
   // 4. Use the first available token
   const finalToken = tokenFromHeader || tokenFromCookie || tokenFromRawCookie;
-  
+
   if (!finalToken) {
     console.log('No token found in request');
     console.log('Headers:', req.headers);

@@ -16,15 +16,29 @@ const app = express();
 // CORS Configuration
 console.log('CORS: Configuring CORS with credentials support');
 
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://community-app-ochre.vercel.app',
+  'https://community-app-kuzg.onrender.com'
+];
+
 const corsOptions = {
   origin: function (origin, callback) {
-    // Allow all origins in development
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In development, allow all origins
     if (process.env.NODE_ENV !== 'production') {
       return callback(null, true);
     }
     
-    // In production, you might want to restrict this to specific domains
-    // For now, we'll allow all origins but you should update this for production
+    // Check against allowed origins in production
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `CORS not allowed for ${origin}`;
+      console.warn(msg);
+      return callback(new Error(msg), false);
+    }
+    
     return callback(null, true);
   },
   credentials: true, // This is important for cookies
@@ -36,13 +50,15 @@ const corsOptions = {
     'Accept',
     'Origin',
     'Access-Control-Allow-Credentials',
-    'X-Requested-With'
+    'Content-Range',
+    'X-Total-Count'
   ],
   exposedHeaders: [
-    'Content-Range',
-    'X-Total-Count',
-    'Access-Control-Allow-Credentials',
-    'Set-Cookie'
+    'set-cookie',
+    'authorization',
+    'content-range',
+    'x-total-count',
+    'access-control-allow-credentials'
   ],
   maxAge: 86400, // 24 hours
   preflightContinue: false,
