@@ -9,17 +9,16 @@ import {
   Button,
   Box,
   Alert,
-  IconButton,
-  Card,
-  CardContent,
-  CardActions,
-  Divider,
-  Stack,
   CircularProgress,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
-import { formatDistanceToNow } from 'date-fns';
-import { useLoading } from '../contexts/LoadingContext';
+import toast from 'react-hot-toast';
 
 export default function Notices() {
   const [items, setItems] = useState([]);
@@ -28,81 +27,30 @@ export default function Notices() {
   const [content, setContent] = useState("");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-  const [deletingId, setDeletingId] = useState(null);
   const [loading, setLoading] = useState(true);
-  const { showLoading, hideLoading } = useLoading();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [noticeToDelete, setNoticeToDelete] = useState(null);
   useEffect(() => {
-    let isMounted = true;
-    
     const fetchData = async () => {
       try {
         setLoading(true);
-        showLoading();
-        
         const [noticesResponse, meResponse] = await Promise.all([
-          axios.get("/api/notices", { withCredentials: true }),
-          axios.get("/api/me", { withCredentials: true })
+          axios.get("/api/notices"),
+          axios.get("/api/me")
         ]);
-        
-        if (isMounted) {
-          setItems(noticesResponse.data);
-          setMe(meResponse.data);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        if (isMounted) {
-          setItems([]);
-          setMe(null);
-          setError('Failed to load notices');
-        }
+        setItems(noticesResponse.data);
+        setMe(meResponse.data);
+      } catch (error) {
+        setItems([]);
+        setMe(null);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-        hideLoading();
+        setLoading(false);
       }
     };
     
     fetchData();
-    
-    return () => {
-      isMounted = false;
-      hideLoading();
-    };
-  }, [showLoading, hideLoading]);
-  
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this notice?')) return;
-    
-    try {
-      setDeletingId(id);
-      try {
-        showLoading();
-        await axios.delete(`/api/notices/${id}`, { withCredentials: true });
-        setItems(items.filter((item) => item.id !== id));
-        toast.success('Notice deleted successfully');
-      } catch (err) {
-        console.error('Error deleting notice:', err);
-        toast.error(err.response?.data?.error || 'Failed to delete notice');
-      } finally {
-        setDeletingId(null);
-        hideLoading();
-      }
-    } catch (err) {
-      console.error('Error deleting notice:', err);
-      toast.error(err.response?.data?.error || 'Failed to delete notice');
-    }
-  };
-
-  const handleSubmit = async (e) => {
+  }, []);
+  const submit = async (e) => {
     e.preventDefault();
     if (!title.trim() || !content.trim()) {
       setError('Title and content are required');
@@ -133,91 +81,164 @@ export default function Notices() {
     }
   };
 
-  // Ensure items is always an array
-  const safeItems = Array.isArray(items) ? items : [];
+  const handleDeleteClick = (notice) => {
+    setNoticeToDelete(notice);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!noticeToDelete) return;
+    
+    try {
+      await axios.delete(`/api/notices/${noticeToDelete.id}`);
+      setItems(prev => prev.filter(item => item.id !== noticeToDelete.id));
+      toast.success('Notice deleted successfully');
+    } catch (err) {
+      const msg = err?.response?.data?.error || 'Failed to delete notice';
+      toast.error(msg);
+    } finally {
+      setDeleteDialogOpen(false);
+      setNoticeToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteDialogOpen(false);
+    setNoticeToDelete(null);
+  };
+
+  // Only SECRETARY can delete notices
+  const canDeleteNotice = () => {
+    return me?.role === 'SECRETARY';
+  };
 
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>
         Notices
       </Typography>
-
-      {me?.role === "SECRETARY" && (
-        <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
-          <Typography variant="subtitle1" fontWeight={600} gutterBottom>
-            Create notice
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit}>
-            <TextField
-              fullWidth
-              label="Title"
-              margin="normal"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-            <TextField
-              fullWidth
-              label="Content"
-              margin="normal"
-              multiline
-              rows={4}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
-            {error && (
-              <Alert severity="error" sx={{ mt: 1 }}>
-                {error}
-              </Alert>
-            )}
-            <Button
-              type="submit"
-              variant="contained"
-              sx={{ mt: 2 }}
-              disabled={saving}
-            >
-              {saving ? "Posting…" : "Post notice"}
-            </Button>
-          </Box>
-        </Paper>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
-
-      <Stack spacing={2} sx={{ mt: 4 }}>
-        {safeItems.length === 0 ? (
-          <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
-            {error ? 'Error loading notices' : 'No notices found'}
-          </Typography>
-        ) : (
-          safeItems.map((item) => (
-          <Card key={item.id} variant="outlined">
-            <CardContent>
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                <Box>
-                  <Typography variant="h6" component="h2">{item.title}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}
-                  </Typography>
-                </Box>
-                {(me?.role === 'ADMIN' || me?.role === 'SECRETARY') && (
-                  <IconButton 
-                    aria-label="delete notice" 
-                    onClick={() => handleDelete(item.id)}
-                    disabled={deletingId === item.id}
-                    color="error"
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {me?.role === "SECRETARY" && (
+            <Paper elevation={1} sx={{ p: 2, mb: 3 }}>
+              <Typography variant="subtitle1" fontWeight={600} gutterBottom>
+                Create notice
+              </Typography>
+              <Box component="form" onSubmit={submit}>
+                <TextField
+                  fullWidth
+                  label="Title"
+                  margin="normal"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                />
+                <TextField
+                  fullWidth
+                  label="Content"
+                  margin="normal"
+                  multiline
+                  rows={4}
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                />
+                {error && (
+                  <Alert severity="error" sx={{ mt: 1 }}>
+                    {error}
+                  </Alert>
+                )}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{ mt: 2 }}
+                  disabled={saving}
+                >
+                  {saving ? "Posting…" : "Post notice"}
+                </Button>
+              </Box>
+            </Paper>
+          )}
+          <Box sx={{ display: "grid", gap: 1 }}>
+            {items.map((n) => (
+              <Paper
+                key={n.id}
+                elevation={0}
+                sx={{ 
+                  p: 2, 
+                  border: "1px solid", 
+                  borderColor: "divider",
+                  position: 'relative',
+                  '&:hover .delete-button': {
+                    opacity: 1,
+                  }
+                }}
+              >
+                {canDeleteNotice(n) && (
+                  <IconButton
+                    className="delete-button"
+                    onClick={() => handleDeleteClick(n)}
                     size="small"
+                    sx={{
+                      position: 'absolute',
+                      right: 8,
+                      top: 8,
+                      opacity: 0,
+                      transition: 'opacity 0.2s',
+                      color: 'error.main',
+                      '&:hover': {
+                        backgroundColor: 'rgba(211, 47, 47, 0.04)',
+                      },
+                    }}
                   >
-                    <DeleteIcon />
+                    <DeleteIcon fontSize="small" />
                   </IconButton>
                 )}
-              </Box>
-              <Divider sx={{ my: 2 }} />
-              <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-                {item?.content}
-              </Typography>
-            </CardContent>
-          </Card>
-          )))
-        }
-      </Stack>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {n.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {n.content}
+                </Typography>
+              </Paper>
+            ))}
+          </Box>
+        </>
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={handleDeleteCancel}
+        aria-labelledby="delete-dialog-title"
+      >
+        <DialogTitle id="delete-dialog-title">Delete Notice</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to delete this notice? This action cannot be undone.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDeleteCancel} color="primary">
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleDeleteConfirm} 
+            color="error"
+            variant="contained"
+            autoFocus
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

@@ -1,73 +1,71 @@
-import { useState } from 'react';
-import { useNavigate, Link as RouterLink } from 'react-router-dom';
-import { useLoading } from '../contexts/LoadingContext';
-import { Container, Paper, Typography, Box, TextField, Button, Link, CircularProgress } from '@mui/material';
-import toast from 'react-hot-toast';
-import axios from 'axios';
+import { useState } from 'react'
+import axios from 'axios'
+import { useNavigate, Link as RouterLink } from 'react-router-dom'
+import { Container, Paper, TextField, Button, Typography, Link, CircularProgress, Box } from '@mui/material'
+import toast from 'react-hot-toast'
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { showLoading, hideLoading } = useLoading();
-  const navigate = useNavigate();
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const navigate = useNavigate()
 
   const onSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
+    setError('')
+    
     if (!email || !password) {
-      toast.error('Email and password are required');
-      return;
+      const msg = 'Email and password are required'
+      toast.error(msg)
+      return setError(msg)
     }
     
-    setIsLoading(true);
-    showLoading();
+    setLoading(true)
     
     try {
-      // Use the axios instance from main.jsx
-      const response = await axios.post('/api/auth/login', 
-        { email, password },
-        { withCredentials: true } // Ensure cookies are sent and received
-      );
+      const loginPromise = axios.post('/api/auth/login', { email, password })
       
-      const { data } = response;
-      
-      // Store user data in localStorage
-      if (data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
-      }
-      
-      // Store token in both localStorage and axios defaults
-      if (data.token) {
-        localStorage.setItem('token', data.token);
-        axios.defaults.headers.common['Authorization'] = `Bearer ${data.token}`;
-      } else {
-        // If no token in response, try to get it from cookies
-        const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
-          const [name, value] = cookie.trim().split('=');
-          return { ...cookies, [name]: value };
-        }, {});
-        
-        if (cookies.token) {
-          axios.defaults.headers.common['Authorization'] = `Bearer ${cookies.token}`;
+      toast.promise(
+        loginPromise,
+        {
+          loading: 'Signing in...',
+          success: (response) => {
+            const { token } = response.data || {}
+            if (token) {
+              try {
+                localStorage.setItem('token', token)
+                localStorage.setItem('justLoggedIn', '1')
+                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+                setTimeout(() => navigate('/'), 1000)
+                return 'Login successful! Redirecting...'
+              } catch (err) {
+                console.error('Error saving to localStorage:', err)
+                throw new Error('Failed to save session')
+              }
+            } else {
+              throw new Error(response?.data?.error || 'Login failed')
+            }
+          },
+          error: (err) => {
+            return err.response?.data?.error || 'Login failed. Please try again.'
+          }
+        },
+        {
+          style: { minWidth: '250px' },
+          success: { duration: 2000 },
+          error: { duration: 4000 }
         }
-      }
+      )
       
-      toast.success('Login successful!');
-      
-      // Check for return URL in query params
-      const params = new URLSearchParams(window.location.search);
-      const returnUrl = params.get('returnUrl');
-      
-      // Navigate to the return URL or home page
-      navigate(returnUrl || '/', { replace: true });
-    } catch (error) {
-      console.error('Login error:', error);
-      const errorMessage = error.message || 'Login failed. Please try again.';
-      toast.error(errorMessage);
+      await loginPromise
+    } catch (e) {
+      // Error is already handled by toast.promise
+      console.error('Login error:', e)
     } finally {
-      setIsLoading(false);
-      hideLoading();
+      setLoading(false)
     }
+  }
 
   return (
     <Container maxWidth="sm" sx={{ mt: 6 }}>
@@ -91,37 +89,27 @@ export default function Login() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          <Box sx={{ position: "relative" }}>
+          <Box sx={{ position: 'relative', mt: 2 }}>
             <Button
               fullWidth
               variant="contained"
-              sx={{
-                mt: 2,
-                height: "48px",
-                "&.Mui-disabled": {
-                  backgroundColor: "primary.main",
-                  opacity: 0.7,
-                  color: "white",
-                },
-              }}
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? "Signing in..." : "Login"}
-              {isLoading && (
-                <CircularProgress
-                  size={24}
-                  sx={{
-                    color: "white",
-                    position: "absolute",
-                    top: "50%",
-                    left: "50%",
-                    marginTop: "-12px",
-                    marginLeft: "-12px",
-                  }}
-                />
-              )}
+              {loading ? 'Signing in...' : 'Login'}
             </Button>
+            {loading && (
+              <CircularProgress
+                size={24}
+                sx={{
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  marginTop: '-12px',
+                  marginLeft: '-12px',
+                }}
+              />
+            )}
           </Box>
         </form>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>

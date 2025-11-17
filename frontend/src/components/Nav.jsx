@@ -40,40 +40,18 @@ export default function Nav() {
     fetchUser()
   }, [pathname])
 
-  const logout = async () => {
-    try {
-      // Use GET instead of POST for logout
-      await axios.get('/api/auth/logout', { withCredentials: true });
-      // Show success toast before navigation
-      toast.success('Successfully logged out');
-      
-      // Clear local state
-      setMe(null);
-      setHasToken(false);
-      
-      // Clear any stored tokens
+  const logout = () => {
+    try { 
       localStorage.removeItem('token');
-      
-      // Small delay to allow toast to be seen before navigation
-      setTimeout(() => {
-        navigate('/login');
-      }, 500);
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Even if the server fails, we should still clear the local state
-      setMe(null);
-      setHasToken(false);
-      localStorage.removeItem('token');
-      
-      // Don't show error to user if we're already logged out
-      if (!error.response || error.response.status !== 401) {
-        toast.error('Failed to log out. Please try again.');
-      }
-      
-      // Still navigate to login page
-      setTimeout(() => {
-        navigate('/login');
-      }, 500);
+      import('react-hot-toast').then(({ toast }) => {
+        toast.success('Successfully logged out');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
+      });
+    } catch (e) {
+      console.error('Logout error:', e);
+      window.location.href = '/login';
     }
   }
 

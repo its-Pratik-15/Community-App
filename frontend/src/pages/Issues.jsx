@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert, CircularProgress } from '@mui/material'
-import { useLoading } from '../contexts/LoadingContext'
 
 export default function Issues() {
   const [items, setItems] = useState([])
@@ -9,46 +8,26 @@ export default function Issues() {
   const [me, setMe] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
-  const { showLoading, hideLoading } = useLoading()
   useEffect(() => {
-    let isMounted = true;
-    
     const fetchData = async () => {
       try {
         setLoading(true);
-        showLoading();
-        
-        const [issuesResponse, profileResponse] = await Promise.all([
+        const [issuesResponse, meResponse] = await Promise.all([
           axios.get('/api/issues'),
-          axios.get('/api/profile/me')
+          axios.get('/api/me')
         ]);
-        
-        if (isMounted) {
-          setItems(issuesResponse.data);
-          setMe(profileResponse.data);
-        }
+        setItems(issuesResponse.data);
+        setMe(meResponse.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
-        if (isMounted) {
-          setItems([]);
-          setMe(null);
-          setError('Failed to load data');
-        }
+        setItems([]);
+        setMe(null);
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-        hideLoading();
+        setLoading(false);
       }
     };
     
     fetchData();
-    
-    return () => {
-      isMounted = false;
-      hideLoading();
-    };
-  }, [showLoading, hideLoading]);
+  }, [])
   const submit = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
@@ -112,17 +91,18 @@ export default function Issues() {
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Issues</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <TextField fullWidth size="small" value={text} onChange={e=>setText(e.target.value)} placeholder="Describe an issue" />
-        <Button type="submit" variant="contained">Submit</Button>
-      </Box>
-      <Box sx={{ display: 'grid', gap: 1 }}>
-        {safeItems.length === 0 ? (
-          <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
-            {error ? 'Error loading issues' : 'No issues found'}
-          </Typography>
-        ) : (
-          safeItems.map(i => {
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <TextField fullWidth size="small" value={text} onChange={e=>setText(e.target.value)} placeholder="Describe an issue" />
+            <Button type="submit" variant="contained">Submit</Button>
+          </Box>
+          <Box sx={{ display: 'grid', gap: 1 }}>
+        {items.map(i => {
           const canTakeStaff = me?.role === 'STAFF' && i.status === 'OPEN'
           const isSecretary = me?.role === 'SECRETARY'
           const canResolve = isSecretary || (me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId)
@@ -147,9 +127,11 @@ export default function Issues() {
                 )}
               </Box>
             </Paper>
-          )})
-        )}
-      </Box>
+          )
+        })}
+          </Box>
+        </>
+      )}
     </Container>
   )
 }
