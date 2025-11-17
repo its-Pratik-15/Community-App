@@ -26,23 +26,16 @@ class AuthController {
         role: user.role,
       });
 
-      // Set HTTP-only cookie with proper configuration
-      const isProduction = process.env.NODE_ENV === 'production';
-      const cookieOptions = {
+      // Set secure HTTP-only cookie with cross-site support
+      res.cookie('token', token, {
         httpOnly: true,
-        secure: isProduction,
-        sameSite: isProduction ? 'none' : 'lax', // Use 'none' in production for cross-site
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-        path: '/',
-        domain: isProduction ? '.vercel.app' : undefined
-      };
-      
-      console.log('Setting cookie with options:', {
-        ...cookieOptions,
-        token: token ? 'token-present' : 'no-token'
+        secure: process.env.NODE_ENV === 'production' ? true : false,  
+        sameSite: 'none',  
+        path: '/',       
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
       });
       
-      res.cookie('token', token, cookieOptions);
+      console.log('Auth token cookie set with secure settings');
 
       res.json({
         user: {
@@ -51,7 +44,7 @@ class AuthController {
           email: user.email,
           role: user.role,
         },
-        token // Include token in response for clients that need it
+        token
       });
     } catch (error) {
       console.error('Login error:', error);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { useNavigate, Link } from 'react-router-dom'
 import { Container, Paper, TextField, Button, Typography, FormControl, InputLabel, Select, MenuItem, Box } from '@mui/material'
 
@@ -28,11 +28,11 @@ export default function Register() {
         payload.block = block
         payload.flatNo = flatNo
       }
-      const r = await axios.post('/api/auth/register', payload)
-      const { token } = r.data || {}
+      const response = await api.post('/auth/register', payload)
+      const { token } = response.data || {}
       if (token) {
         try { localStorage.setItem('token', token) } catch {}
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`
         navigate('/')
       } else {
         setError('Registration failed. Please try again.')

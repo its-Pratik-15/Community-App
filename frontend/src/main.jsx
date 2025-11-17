@@ -1,111 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App'
-import './index.css'
-import axios from 'axios'
-import { ThemeProvider, createTheme } from '@mui/material/styles'
-import CssBaseline from '@mui/material/CssBaseline'
-import Toaster from './components/Toaster'
-import '@fontsource/roboto/300.css'
-import '@fontsource/roboto/400.css'
-import '@fontsource/roboto/500.css'
-import '@fontsource/roboto/700.css'
-
-// Configure axios defaults - using relative paths since we're proxying through Vercel
-const API_BASE_URL = ''; // Empty for relative paths
-
-// Set axios base URL based on environment
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-axios.defaults.baseURL = baseURL;
-
-// Log environment for debugging (remove in production)
-console.log('API Base URL:', baseURL);
-
-// Add request interceptor to include token in headers
-axiosInstance.interceptors.request.use(
-  (config) => {
-    // Skip for login/register requests to prevent infinite loops
-    if (config.url.includes('/auth/')) {
-      return config;
-    }
-    
-    // Try to get token from localStorage first
-    let token = localStorage.getItem('token');
-    
-    // If no token in localStorage, try to get it from cookies
-    if (!token && typeof document !== 'undefined') {
-      const cookies = document.cookie.split(';').reduce((cookies, cookie) => {
-        const [name, value] = cookie.trim().split('=');
-        return { ...cookies, [name]: value };
-      }, {});
-      
-      if (cookies.token) {
-        token = cookies.token;
-        // Store it in localStorage for future use
-        localStorage.setItem('token', token);
-      }
-    }
-    
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    
-    // Ensure credentials are sent with every request
-    config.withCredentials = true;
-    
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-// Add response interceptor to handle errors
-axiosInstance.interceptors.response.use(
-  (response) => {
-    // If we get a new token in the response, update it
-    if (response.data?.token) {
-      console.log('New token received, updating...');
-      localStorage.setItem('token', response.data.token);
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
-    }
-    return response;
-  },
-  (error) => {
-    console.log('Interceptor error:', {
-      status: error.response?.status,
-      path: window.location.pathname,
-      isLoginPage: window.location.pathname === '/login'
-    });
-
-    // Handle 401 Unauthorized errors
-    if (error.response?.status === 401) {
-      console.log('401 Unauthorized - Clearing auth data and redirecting...');
-      
-      // Clear any existing auth data
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      delete axiosInstance.defaults.headers.common['Authorization'];
-      
-      // Only redirect if not already on the login page
-      if (!window.location.pathname.includes('/login')) {
-        const returnUrl = `?returnUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`;
-        console.log('Redirecting to login with return URL:', returnUrl);
-        window.location.href = `/login${returnUrl}`;
-      }
-      
-      // Return a resolved promise to prevent the error from propagating
-      return Promise.resolve();
-    }
-    
-    // For other errors, reject with the error
-    return Promise.reject(error);
-  }
-);
-
-// Set axios instance as default
-export default axiosInstance;
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom';
+import App from './App';
+import './index.css';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import Toaster from './components/Toaster';
+import '@fontsource/roboto/300.css';
+import '@fontsource/roboto/400.css';
+import '@fontsource/roboto/500.css';
+import '@fontsource/roboto/700.css';
 
 function Root() {
   const getInitialMode = () => {

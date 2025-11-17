@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert, CircularProgress } from '@mui/material'
 
 export default function Issues() {
@@ -13,8 +13,8 @@ export default function Issues() {
       try {
         setLoading(true);
         const [issuesResponse, meResponse] = await Promise.all([
-          axios.get('/api/issues'),
-          axios.get('/api/me')
+          api.get('/issues'),
+          api.get('/me')
         ]);
         setItems(issuesResponse.data);
         setMe(meResponse.data);
@@ -31,15 +31,15 @@ export default function Issues() {
   const submit = async (e) => {
     e.preventDefault()
     if (!text.trim()) return
-    await axios.post('/api/issues', { description: text })
+    await api.post('/issues', { description: text })
     setText('')
-    const r = await axios.get('/api/issues')
+    const r = await api.get('/issues')
     setItems(r.data)
   }
   const deleteIssue = async (issue) => {
     setError('')
     try {
-      await axios.delete(`/api/issues/${issue.id}`)
+      await api.delete(`/issues/${issue.id}`)
       setItems(prev => prev.filter(i => i.id !== issue.id))
     } catch (e) {
       const msg = e?.response?.data?.error || 'Failed to delete issue'
@@ -49,7 +49,7 @@ export default function Issues() {
   const takeIssue = async (issue) => {
     setError('')
     try {
-      const r = await axios.post(`/api/issues/${issue.id}/take`)
+      const r = await api.post(`/issues/${issue.id}/take`)
       setItems(prev => prev.map(i => i.id === issue.id ? r.data : i))
     } catch (e) {
       const msg = e?.response?.data?.error || 'Failed to take issue'
@@ -59,7 +59,7 @@ export default function Issues() {
   const resolveIssue = async (issue) => {
     setError('')
     try {
-      const r = await axios.post(`/api/issues/${issue.id}/resolve`)
+      const r = await api.post(`/issues/${issue.id}/resolve`)
       setItems(prev => prev.map(i => i.id === issue.id ? r.data : i))
     } catch (e) {
       const msg = e?.response?.data?.error || 'Failed to resolve issue'
@@ -69,7 +69,7 @@ export default function Issues() {
   const reopenIssue = async (issue) => {
     setError('')
     try {
-      const r = await axios.patch(`/api/issues/${issue.id}`, { status: 'OPEN' })
+      const r = await api.patch(`/issues/${issue.id}`, { status: 'OPEN' })
       setItems(prev => prev.map(i => i.id === issue.id ? r.data : i))
     } catch (e) {
       const msg = e?.response?.data?.error || 'Failed to reopen issue'
