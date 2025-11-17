@@ -27,12 +27,14 @@ class AuthController {
       });
 
       // Set secure HTTP-only cookie with cross-site support
-      res.cookie('token', token, {
+      const isProd = process.env.NODE_ENV === "production";
+      
+      res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production' ? true : false,  
-        sameSite: 'none',  
-        path: '/',       
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        secure: isProd,              
+        sameSite: isProd ? "none" : "lax",
+        path: "/",
+        maxAge: 7 * 24 * 60 * 60 * 1000 
       });
       
       console.log('Auth token cookie set with secure settings');
