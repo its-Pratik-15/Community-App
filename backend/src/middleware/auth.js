@@ -1,13 +1,6 @@
 import jwt from "jsonwebtoken";
 
-export function signToken(payload) {
-  return jwt.sign(payload, process.env.JWT_SECRET || "changeme", {
-    expiresIn: "7d",
-  });
-}
-
 export function requireAuth(req, res, next) {
-  // Log request details for debugging
   console.log('Auth Middleware - Request:', {
     method: req.method,
     path: req.path,
@@ -18,76 +11,42 @@ export function requireAuth(req, res, next) {
     cookies: req.cookies
   });
 
+  // Only check cookies (you removed header auth)
+  const tokenFromCookie = req.cookies?.token;
 
-  const tokenFromCookie = req.cookies?.token 
-  
   console.log('Token sources:', {
     cookie: tokenFromCookie ? 'present' : 'missing'
   });
-  
-  // 4. Use the first available token
-  const finalToken = tokenFromCookie
 
-  if (!finalToken) {
+  if (!tokenFromCookie) {
     console.log('No token found in request');
-    console.log('Headers:', req.headers);
-    return res.status(401).json({ 
+
+    return res.status(401).json({
       error: "Unauthorized: No token provided",
       details: {
-        hasAuthHeader: !!authHeader,
         hasCookies: !!req.cookies,
         cookieKeys: req.cookies ? Object.keys(req.cookies) : []
       }
     });
   }
-  
+
   try {
-    const decoded = jwt.verify(finalToken, process.env.JWT_SECRET || "changeme");
-    
+    const decoded = jwt.verify(
+      tokenFromCookie,
+      process.env.JWT_SECRET || "changeme"
+    );
+
     if (!decoded.role) {
       return res.status(401).json({ error: "Invalid token: Missing role information" });
     }
-    
-    // Attach user info to request object
+
     req.user = decoded;
     next();
-  } catch (error) {    
-    if (error.name === 'TokenExpiredError') {
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
       return res.status(401).json({ error: "Session expired. Please log in again." });
     }
-    
+
     return res.status(401).json({ error: "Invalid or expired token" });
   }
-}
-
-export function requireRole(...roles) {
-  return (req, res, next) => {
-    if (!req.user) {
-      return res.status(403).json({ error: "Forbidden: No user information found" });
-    }
-
-    // Flatten the roles array in case it's nested
-    const flattenedRoles = roles.flat(Infinity);
-    
-    // Convert both stored role and required roles to uppercase for case-insensitive comparison
-    const userRole = req.user.role?.toUpperCase();
-    const requiredRoles = flattenedRoles.map(role => {
-      if (typeof role === 'string') {
-        return role.toUpperCase();
-      }
-      console.warn('Invalid role type:', role);
-      return ''; // Will never match
-    });
-    
-    if (!requiredRoles.includes(userRole)) {
-      console.log(`Access denied. User role: ${userRole}, Required roles: ${requiredRoles.join(', ')}`);
-      return res.status(403).json({ 
-        error: "Forbidden: Insufficient permissions",
-        requiredRoles,
-        currentRole: userRole
-      });
-    }
-    
-    next();
-  };
 }
