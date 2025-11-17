@@ -6,14 +6,19 @@ import './index.css'
 import axios from 'axios'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import CssBaseline from '@mui/material/CssBaseline'
+import Toaster from './components/Toaster'
 import '@fontsource/roboto/300.css'
 import '@fontsource/roboto/400.css'
 import '@fontsource/roboto/500.css'
 import '@fontsource/roboto/700.css'
 
 
-// Axios base URL: hardcode to Render backend for production
-axios.defaults.baseURL = 'https://community-app-kuzg.onrender.com'
+// Set axios base URL based on environment
+const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+axios.defaults.baseURL = baseURL;
+
+// Log environment for debugging (remove in production)
+console.log('API Base URL:', baseURL);
 
 const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
 if (token) {
@@ -82,12 +87,13 @@ function Root() {
   }), [mode])
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <BrowserRouter>
+    <BrowserRouter>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Toaster />
         <App />
-      </BrowserRouter>
-    </ThemeProvider>
+      </ThemeProvider>
+    </BrowserRouter>
   )
 }
 

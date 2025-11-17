@@ -1,14 +1,31 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Container, Paper, Typography, Box, Button, Chip, Alert } from '@mui/material'
+import { Container, Paper, Typography, Box, Button, Chip, Alert, CircularProgress } from '@mui/material'
 
 export default function Staff() {
   const [staff, setStaff] = useState([])
   const [me, setMe] = useState(null)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
-    axios.get('/api/staff').then(r => setStaff(r.data)).catch(() => setStaff([]))
-    axios.get('/api/me').then(r => setMe(r.data)).catch(() => setMe(null))
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [staffResponse, meResponse] = await Promise.all([
+          axios.get('/api/staff'),
+          axios.get('/api/me')
+        ]);
+        setStaff(staffResponse.data);
+        setMe(meResponse.data);
+      } catch (error) {
+        setStaff([]);
+        setMe(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
   }, [])
 
   const toggleDuty = async (member) => {
@@ -25,6 +42,11 @@ export default function Staff() {
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Staff</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
       <Box sx={{ display: 'grid', gap: 1 }}>
         {staff.map(s => (
           <Paper key={s.id} elevation={0} sx={{ p: 2, border: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -43,6 +65,7 @@ export default function Staff() {
           </Paper>
         ))}
       </Box>
+      )}
     </Container>
   )
 }

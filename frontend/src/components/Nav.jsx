@@ -26,8 +26,18 @@ export default function Nav() {
   }, [pathname])
 
   const logout = () => {
-    try { localStorage.removeItem('token') } catch {}
-    window.location.href = '/login'
+    try { 
+      localStorage.removeItem('token');
+      import('react-hot-toast').then(({ toast }) => {
+        toast.success('Successfully logged out');
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1000);
+      });
+    } catch (e) {
+      console.error('Logout error:', e);
+      window.location.href = '/login';
+    }
   }
 
   const initials = (n) => {

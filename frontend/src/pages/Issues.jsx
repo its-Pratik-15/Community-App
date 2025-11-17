@@ -1,15 +1,32 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
-import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert } from '@mui/material'
+import { Container, Paper, Typography, Box, TextField, Button, Chip, Alert, CircularProgress } from '@mui/material'
 
 export default function Issues() {
   const [items, setItems] = useState([])
   const [text, setText] = useState('')
   const [me, setMe] = useState(null)
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   useEffect(() => {
-    axios.get('/api/issues').then(r => setItems(r.data)).catch(() => setItems([]))
-    axios.get('/api/me').then(r => setMe(r.data)).catch(() => setMe(null))
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [issuesResponse, meResponse] = await Promise.all([
+          axios.get('/api/issues'),
+          axios.get('/api/me')
+        ]);
+        setItems(issuesResponse.data);
+        setMe(meResponse.data);
+      } catch (error) {
+        setItems([]);
+        setMe(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
   }, [])
   const submit = async (e) => {
     e.preventDefault()
@@ -63,11 +80,17 @@ export default function Issues() {
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Issues</Typography>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, mb: 2 }}>
-        <TextField fullWidth size="small" value={text} onChange={e=>setText(e.target.value)} placeholder="Describe an issue" />
-        <Button type="submit" variant="contained">Submit</Button>
-      </Box>
-      <Box sx={{ display: 'grid', gap: 1 }}>
+      {loading ? (
+        <Box display="flex" justifyContent="center" my={4}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          <Box component="form" onSubmit={submit} sx={{ display: 'flex', gap: 1, mb: 2 }}>
+            <TextField fullWidth size="small" value={text} onChange={e=>setText(e.target.value)} placeholder="Describe an issue" />
+            <Button type="submit" variant="contained">Submit</Button>
+          </Box>
+          <Box sx={{ display: 'grid', gap: 1 }}>
         {items.map(i => {
           const canTakeStaff = me?.role === 'STAFF' && i.status === 'OPEN'
           const isSecretary = me?.role === 'SECRETARY'
@@ -95,7 +118,9 @@ export default function Issues() {
             </Paper>
           )
         })}
-      </Box>
+          </Box>
+        </>
+      )}
     </Container>
   )
 }
