@@ -112,6 +112,11 @@ export default function Login() {
             )}
           </Box>
         </form>
+        {error && (
+          <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        )}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           New here?{" "}
           <Link component={RouterLink} to="/register" color="secondary">
@@ -121,5 +126,4 @@ export default function Login() {
       </Paper>
     </Container>
   );
-}
 }
