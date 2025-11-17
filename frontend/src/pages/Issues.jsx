@@ -76,6 +76,17 @@ export default function Issues() {
       setError(msg)
     }
   }
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
+        <CircularProgress />
+      </Box>
+    )
+  }
+
+  // Ensure items is always an array
+  const safeItems = Array.isArray(items) ? items : [];
+
   return (
     <Container maxWidth="md" sx={{ mt: 3 }}>
       <Typography variant="h5" fontWeight={600} gutterBottom>Issues</Typography>
@@ -105,7 +116,7 @@ export default function Issues() {
                 {canTakeStaff && (
                   <Button size="small" variant="outlined" onClick={() => takeIssue(i)}>Take</Button>
                 )}
-                {(isSecretary && i.status !== 'RESOLVED') || (me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId) ? (
+                {me?.role === 'STAFF' && i.status === 'IN_PROGRESS' && i.assignedStaffId ? (
                   <Button size="small" variant="contained" onClick={() => resolveIssue(i)}>Resolve</Button>
                 ) : null}
                 {isSecretary && i.status === 'RESOLVED' && (

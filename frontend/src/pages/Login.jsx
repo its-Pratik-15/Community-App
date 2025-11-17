@@ -70,14 +70,16 @@ export default function Login() {
   return (
     <Container maxWidth="sm" sx={{ mt: 6 }}>
       <Paper elevation={2} sx={{ p: 3 }}>
-        <Typography variant="h5" component="h1" gutterBottom>Login</Typography>
+        <Typography variant="h5" component="h1" gutterBottom>
+          Login
+        </Typography>
         <form onSubmit={onSubmit}>
           <TextField
             fullWidth
             label="Email"
             margin="normal"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <TextField
             fullWidth
@@ -85,7 +87,7 @@ export default function Login() {
             label="Password"
             margin="normal"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
           />
           <Box sx={{ position: 'relative', mt: 2 }}>
             <Button
@@ -110,14 +112,14 @@ export default function Login() {
             )}
           </Box>
         </form>
-        {error ? <Typography color="error" variant="body2" sx={{ mt: 1 }}>{error}</Typography> : null}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-          New here?{' '}
+          New here?{" "}
           <Link component={RouterLink} to="/register" color="secondary">
             Create an account
           </Link>
         </Typography>
       </Paper>
     </Container>
-  )
+  );
+}
 }

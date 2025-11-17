@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import axios from 'axios'
+import { toast } from 'react-hot-toast'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
 import Typography from '@mui/material/Typography'
@@ -19,10 +20,24 @@ export default function Nav() {
   const [hasToken, setHasToken] = useState(false)
 
   useEffect(() => {
-    const t = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null
-    setHasToken(Boolean(t))
-    if (!t) { setMe(null); return }
-    axios.get('/api/me').then(r => setMe(r.data)).catch(() => setMe(null))
+    const fetchUser = async () => {
+      try {
+        const response = await axios.get('/api/profile/me', { withCredentials: true })
+        if (response.data) {
+          setMe(response.data)
+          setHasToken(true)
+        } else {
+          setMe(null)
+          setHasToken(false)
+        }
+      } catch (error) {
+        console.error('Error fetching user:', error)
+        setMe(null)
+        setHasToken(false)
+      }
+    }
+    
+    fetchUser()
   }, [pathname])
 
   const logout = () => {

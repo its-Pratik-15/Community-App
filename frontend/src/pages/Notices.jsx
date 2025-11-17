@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { toast } from 'react-hot-toast';
 import {
   Container,
   Paper,
@@ -51,22 +52,32 @@ export default function Notices() {
   }, []);
   const submit = async (e) => {
     e.preventDefault();
-    setError("");
-    if (!title || !content) {
-      setError("Title and content are required");
+    if (!title.trim() || !content.trim()) {
+      setError('Title and content are required');
       return;
     }
+    
     try {
       setSaving(true);
-      const r = await axios.post("/api/notices", { title, content });
-      setItems((prev) => [r.data, ...prev]);
+      setError('');
+      showLoading();
+      
+      const response = await axios.post(
+        "/api/notices",
+        { title, content },
+        { withCredentials: true }
+      );
+      
+      setItems([response.data, ...items]);
       setTitle("");
       setContent("");
+      toast.success('Notice created successfully');
     } catch (err) {
-      const msg = err?.response?.data?.error || "Failed to post notice";
-      setError(msg);
+      console.error('Error creating notice:', err);
+      setError(err.response?.data?.error || 'Failed to create notice');
     } finally {
       setSaving(false);
+      hideLoading();
     }
   };
 

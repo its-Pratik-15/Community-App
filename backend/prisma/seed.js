@@ -17,6 +17,7 @@ async function main() {
   const seedPassword = process.env.SEED_USER_PASSWORD || process.env.DEFAULT_USER_PASSWORD || 'password'
   const salt = await bcrypt.genSalt(10)
   const passwordHash = await bcrypt.hash(seedPassword, salt)
+  // Create secretary user and staff record
   const secretary = await prisma.user.create({
     data: {
       email: "secretary@example.com",
@@ -27,6 +28,16 @@ async function main() {
       flatNo: '101',
     },
   });
+  
+  // Create staff record for secretary
+  await prisma.staff.create({
+    data: {
+      name: secretary.name,
+      role: secretary.role,
+      isOnDuty: true,
+      userId: secretary.id
+    }
+  });
   const owner = await prisma.user.create({
     data: { email: "owner@example.com", name: "Flat Owner", role: "OWNER", passwordHash, block: 'B', flatNo: '202' },
   });
@@ -36,26 +47,50 @@ async function main() {
 
   // Worker user linked to Staff
   const workerUser = await prisma.user.create({
-    data: { email: "worker1@example.com", name: "Gate Security", role: "STAFF", passwordHash },
+    data: { 
+      email: "worker1@example.com", 
+      name: "Gate Security", 
+      role: "STAFF", 
+      passwordHash 
+    },
   })
   const workerStaff = await prisma.staff.create({
-    data: { name: workerUser.name || workerUser.email, role: "Security", isOnDuty: true, userId: workerUser.id },
+    data: { 
+      name: workerUser.name || workerUser.email, 
+      role: "STAFF", 
+      isOnDuty: true, 
+      userId: workerUser.id 
+    },
   })
 
-  // Additional staff without linked user
-  const cleaner = await prisma.staff.create({ data: { name: "Ravi", role: "Cleaning", isOnDuty: false } })
-  const electrician = await prisma.staff.create({ data: { name: "Meera", role: "Electrician", isOnDuty: true } })
+  // Additional staff without linked user - using STAFF role for all
+  const cleaner = await prisma.staff.create({ 
+    data: { 
+      name: "Ravi", 
+      role: "STAFF", 
+      isOnDuty: false 
+    } 
+  })
+  const electrician = await prisma.staff.create({ 
+    data: { 
+      name: "Meera", 
+      role: "STAFF", 
+      isOnDuty: true 
+    } 
+  })
 
-  // Notices
+  // Notices - create with secretary as the author
   await prisma.notice.createMany({
     data: [
       {
         title: "Water Supply Maintenance",
         content: "Water supply will be off from 2 PM to 4 PM on Friday.",
+        userId: secretary.id
       },
       {
         title: "Diwali Celebration",
         content: "Join us in the clubhouse on Saturday at 7 PM.",
+        userId: secretary.id
       },
     ],
   });
@@ -79,12 +114,12 @@ async function main() {
     ],
   });
 
-  // Staff
+  // Staff - using only valid Role enum values (TENANT, OWNER, SECRETARY, STAFF)
   await prisma.staff.createMany({
     data: [
-      { name: "Ramesh", role: "Cleaning", isOnDuty: true },
-      { name: "Suresh", role: "Security", isOnDuty: false },
-      { name: "Priya", role: "Maintenance", isOnDuty: true },
+      { name: "Ramesh", role: "STAFF", isOnDuty: true },
+      { name: "Suresh", role: "STAFF", isOnDuty: false },
+      { name: "Priya", role: "STAFF", isOnDuty: true },
     ],
   });
 
