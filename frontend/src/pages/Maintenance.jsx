@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { Container, Paper, Typography, Box, Chip, CircularProgress } from '@mui/material'
 
 export default function Maintenance() {
@@ -9,7 +9,7 @@ export default function Maintenance() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const response = await axios.get('/api/maintenance');
+        const response = await api.get('/maintenance');
         setItems(response.data);
       } catch (error) {
         setItems([]);

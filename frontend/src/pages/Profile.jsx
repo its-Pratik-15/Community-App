@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { Container, Paper, Typography, TextField, Button, Alert, Box, Chip } from '@mui/material'
 
 export default function Profile() {
@@ -10,7 +10,7 @@ export default function Profile() {
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    axios.get('/api/profile/me', { withCredentials: true })
+    api.get('/profile/me')
       .then(r => { 
         if (r.data) {
           setData(r.data); 

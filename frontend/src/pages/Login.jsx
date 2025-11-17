@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { useNavigate, Link as RouterLink } from 'react-router-dom'
 import { Container, Paper, TextField, Button, Typography, Link, CircularProgress, Box } from '@mui/material'
 import toast from 'react-hot-toast'
@@ -24,7 +24,7 @@ export default function Login() {
     setLoading(true)
     
     try {
-      const loginPromise = axios.post('/api/auth/login', { email, password })
+      const loginPromise = api.post('/auth/login', { email, password })
       
       toast.promise(
         loginPromise,
@@ -36,7 +36,7 @@ export default function Login() {
               try {
                 localStorage.setItem('token', token)
                 localStorage.setItem('justLoggedIn', '1')
-                axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
+                api.defaults.headers.common['Authorization'] = `Bearer ${token}`
                 setTimeout(() => navigate('/'), 1000)
                 return 'Login successful! Redirecting...'
               } catch (err) {
@@ -112,6 +112,11 @@ export default function Login() {
             )}
           </Box>
         </form>
+        {error && (
+          <Typography color="error" variant="body2" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        )}
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
           New here?{" "}
           <Link component={RouterLink} to="/register" color="secondary">
@@ -121,5 +126,4 @@ export default function Login() {
       </Paper>
     </Container>
   );
-}
 }

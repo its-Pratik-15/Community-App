@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { Container, Paper, Typography, Box, Button, Chip, Alert, CircularProgress } from '@mui/material'
 
 export default function Staff() {
@@ -12,8 +12,8 @@ export default function Staff() {
       try {
         setLoading(true);
         const [staffResponse, meResponse] = await Promise.all([
-          axios.get('/api/staff'),
-          axios.get('/api/me')
+          api.get('/staff'),
+          api.get('/me')
         ]);
         setStaff(staffResponse.data);
         setMe(meResponse.data);
@@ -51,12 +51,12 @@ export default function Staff() {
         </Box>
       ) : (
       <Box sx={{ display: 'grid', gap: 1 }}>
-        {safeStaff.length === 0 ? (
+        {staff.length === 0 ? (
           <Typography variant="body1" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
             {error ? 'Error loading staff' : 'No staff members found'}
           </Typography>
         ) : (
-          safeStaff.map(s => (
+          staff.map(s => (
             <Paper 
               key={s.id} 
               elevation={0} 

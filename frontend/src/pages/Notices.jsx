@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from 'react-hot-toast';
+import api from "../api/axios";
 import {
   Container,
   Paper,
@@ -18,7 +17,6 @@ import {
   DialogActions,
 } from "@mui/material";
 import DeleteIcon from '@mui/icons-material/Delete';
-import toast from 'react-hot-toast';
 
 export default function Notices() {
   const [items, setItems] = useState([]);
@@ -35,8 +33,8 @@ export default function Notices() {
       try {
         setLoading(true);
         const [noticesResponse, meResponse] = await Promise.all([
-          axios.get("/api/notices"),
-          axios.get("/api/me")
+          api.get("/notices"),
+          api.get("/me")
         ]);
         setItems(noticesResponse.data);
         setMe(meResponse.data);
@@ -62,7 +60,7 @@ export default function Notices() {
       setError('');
       showLoading();
       
-      const response = await axios.post(
+      const response = await api.post(
         "/api/notices",
         { title, content },
         { withCredentials: true }
@@ -90,7 +88,7 @@ export default function Notices() {
     if (!noticeToDelete) return;
     
     try {
-      await axios.delete(`/api/notices/${noticeToDelete.id}`);
+      await api.delete(`/notices/${noticeToDelete.id}`);
       setItems(prev => prev.filter(item => item.id !== noticeToDelete.id));
       toast.success('Notice deleted successfully');
     } catch (err) {
