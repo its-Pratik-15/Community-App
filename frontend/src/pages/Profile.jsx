@@ -31,7 +31,7 @@ export default function Profile() {
         setMsg('');
         return;
       }
-      const r = await axios.patch('/api/profile', { name }, { withCredentials: true });
+      const r = await api.patch('/api/profile', { name }, { withCredentials: true });
       if (r.data) {
         setData(r.data);
         setMsg('Saved');
