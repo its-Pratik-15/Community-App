@@ -1,5 +1,11 @@
 import jwt from "jsonwebtoken";
 
+export function signToken(payload) {
+  return jwt.sign(payload, process.env.JWT_SECRET || "changeme", {
+    expiresIn: "7d",
+  });
+}
+
 export function requireAuth(req, res, next) {
   console.log('Auth Middleware - Request:', {
     method: req.method,
