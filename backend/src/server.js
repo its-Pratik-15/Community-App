@@ -14,12 +14,16 @@ dotenv.config();
 const app = express();
 
 
+// Configure cookie parser first
+app.use(cookieParser());
+
 // CORS configuration
 const corsOptions = {
-  origin: process.env.FRONTEND_URL,
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  exposedHeaders: ['set-cookie'],
   maxAge: 86400 // 24 hours
 };
 
@@ -28,14 +32,17 @@ app.use(cors(corsOptions));
 // Request logging for development
 if (process.env.NODE_ENV === 'development') {
   app.use((req, res, next) => {
-    console.log(`${req.method} ${req.originalUrl}`);
+    console.log(`${req.method} ${req.originalUrl}`, {
+      cookies: req.cookies,
+      signedCookies: req.signedCookies,
+      headers: req.headers
+    });
     next();
   });
 }
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -50,7 +57,12 @@ app.use("/api/issues", issueRoutes);
 app.use("/api/profile", profileRoutes);
 
 app.get("/api/me", requireAuth, (req, res) => {
-  res.redirect("/api/profile/me");
+  res.json({
+    id: req.user.id,
+    email: req.user.email,
+    role: req.user.role,
+    name: req.user.name
+  });
 });
 
 app.use((err, req, res, next) => {
