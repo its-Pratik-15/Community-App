@@ -12,38 +12,21 @@ export function requireAuth(req, res, next) {
     method: req.method,
     path: req.path,
     headers: {
-      authorization: req.headers.authorization ? 'present' : 'missing',
       cookie: req.headers.cookie ? 'present' : 'missing',
       origin: req.headers.origin
     },
-    cookies: req.cookies,
-    signedCookies: req.signedCookies
+    cookies: req.cookies
   });
 
-  // 1. Check for token in Authorization header
-  const authHeader = req.headers.authorization;
-  const tokenFromHeader = authHeader?.startsWith('Bearer ') 
-    ? authHeader.split(' ')[1] 
-    : null;
-  
-  // 2. Check for token in cookies
-  const tokenFromCookie = req.cookies?.token || 
-                        (req.signedCookies ? req.signedCookies.token : null);
-  
-  // 3. Fallback to raw cookie header
-  const tokenFromRawCookie = req.headers.cookie 
-    ?.split('; ')
-    ?.find(c => c.trim().startsWith('token='))
-    ?.split('=')[1];
+
+  const tokenFromCookie = req.cookies?.token 
   
   console.log('Token sources:', {
-    header: tokenFromHeader ? 'present' : 'missing',
-    cookie: tokenFromCookie ? 'present' : 'missing',
-    rawCookie: tokenFromRawCookie ? 'present' : 'missing'
+    cookie: tokenFromCookie ? 'present' : 'missing'
   });
   
   // 4. Use the first available token
-  const finalToken = tokenFromHeader || tokenFromCookie || tokenFromRawCookie;
+  const finalToken = tokenFromCookie
 
   if (!finalToken) {
     console.log('No token found in request');
