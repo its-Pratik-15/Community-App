@@ -56,3 +56,33 @@ export function requireAuth(req, res, next) {
     return res.status(401).json({ error: "Invalid or expired token" });
   }
 }
+
+export function requireRole(...roles) {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(403).json({ error: "Forbidden: No user information found" });
+    }
+
+    const flattenedRoles = roles.flat(Infinity);
+    
+    const userRole = req.user.role?.toUpperCase();
+    const requiredRoles = flattenedRoles.map(role => {
+      if (typeof role === 'string') {
+        return role.toUpperCase();
+      }
+      console.warn('Invalid role type:', role);
+      return ''; // Will never match
+    });
+    
+    if (!requiredRoles.includes(userRole)) {
+      console.log(`Access denied. User role: ${userRole}, Required roles: ${requiredRoles.join(', ')}`);
+      return res.status(403).json({ 
+        error: "Forbidden: Insufficient permissions",
+        requiredRoles,
+        currentRole: userRole
+      });
+    }
+    
+    next();
+  };
+}
