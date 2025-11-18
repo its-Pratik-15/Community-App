@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
-import axios from 'axios'
+import api from '../api/axios'
 import { toast } from 'react-hot-toast'
 import AppBar from '@mui/material/AppBar'
 import Toolbar from '@mui/material/Toolbar'
@@ -22,7 +22,7 @@ export default function Nav() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await axios.get('/api/profile/me', { withCredentials: true })
+        const response = await api.get('/profile/me')
         if (response.data) {
           setMe(response.data)
           setHasToken(true)
